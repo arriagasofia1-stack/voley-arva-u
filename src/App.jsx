@@ -1070,7 +1070,7 @@ export default function App() {
               <table style={{width:"100%", borderCollapse:"collapse"}}>
                 <thead>
                   <tr>
-                    {["#","Equipo","Pts","J","G","SF","SC"].map((h,i) => (
+                    {["#","Equipo","Pts","J","G","P","F","C","DS","DP"].map((h,i) => (
                       <th key={i} style={{fontSize:10, fontWeight:700, letterSpacing:1, color:T.secLabel,
                         textTransform:"uppercase", padding:"8px 6px", textAlign:i<=1?"left":"center",
                         paddingLeft:i===0?20:i===1?6:6}}>{h}</th>
@@ -1099,12 +1099,14 @@ export default function App() {
                         ))
                       ) : (
                         <>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontFamily:"Archivo Black,sans-serif",
-                            fontSize:14, fontWeight:900, color:r.equipo==="ULP"?RWIN:T.t2}}>{r.pts}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.j}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:r.g>0?RWIN:T.t3}}>{r.g}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.sf}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.sc}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontFamily:"Archivo Black,sans-serif", fontSize:13, fontWeight:900, color:r.equipo==="ULP"?RWIN:T.t2}}>{r.pts}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:T.t3}}>{r.j}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:r.g>0?RWIN:T.t3}}>{r.g}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:r.p>0?RLOS:T.t3}}>{r.p||0}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:T.t3}}>{r.sf}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:T.t3}}>{r.sc}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:(r.sf-r.sc)>=0?RWIN:RLOS}}>{r.sf-r.sc}</td>
+                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:11, color:T.t3}}>0</td>
                         </>
                       )}
                     </tr>
