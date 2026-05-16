@@ -243,7 +243,7 @@ const TEAM_LOGOS = {
 export default function App() {
   const [tab,       setTab]       = useState("home");
   const [dark,      setDark]      = useState(() => loadTheme());
-  const [res,       setRes]       = useState(loadR);
+  const [res,       setRes]       = useState(loadR());
   const [filtro,    setFiltro]    = useState("todos");
   const [rivalFil,  setRivalFil]  = useState("todos");
   const [vistaPartidos, setVistaPartidos] = useState("lista"); // "lista" | "calendario"
