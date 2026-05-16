@@ -730,48 +730,8 @@ export default function App() {
         );
       })}
     </div>
-  </div>
-)}
-                </div>
-                {/* Detalle del partido seleccionado */}
-                {selUltimo && (
-  (() => {
-    const p = enriched.find(x => x.f === selUltimo);
-    if (!p || !res?.[p.f]) return null;
-    const r = calcRes(res[p.f], p);
-    const rival = p.cond === "LOCAL" ? p.visita : p.local;
 
-    return (
-      <div style={{
-        margin:"10px 20px 0",
-        background:T.surface,
-        border:"1px solid "+T.border,
-        borderLeft:"3px solid "+rColor(r),
-        borderRadius:10,
-        padding:"14px 16px"
-      }}>
-        <div style={{fontSize:10, color:T.t3, marginBottom:8}}>
-          {"Fecha "+p.f+" - "+fmtDia(p.dia)+" - "+(p.cond==="LOCAL"?"Local":"Visitante")}
-        </div>
-
-        <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:6}}>
-          <TeamBadge equipo="ULP" size={28}/>
-          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:18, fontWeight:900, color:T.t1}}>
-            ULP
-          </span>
-
-          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:18, fontWeight:900, color:rColor(r)}}>
-            {getULPSets(res[p.f],p)+" - "+getRivalSets(res[p.f],p)}
-          </span>
-
-          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:18, fontWeight:900, color:T.t1}}>
-            {N(rival)}
-          </span>
-        </div>
-      </div>
-    );
-  })()
-)}
+                {selUltimo && (() => {
                   const p = enriched.find(x=>x.f===selUltimo);
                   if (!p || !res[p.f]) return null;
                   const r = calcRes(res[p.f],p);
@@ -1086,3 +1046,7 @@ export default function App() {
 
   </div>
 )}
+      </div>
+    </div>
+  );
+}
