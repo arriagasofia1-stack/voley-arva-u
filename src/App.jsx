@@ -243,7 +243,7 @@ const TEAM_LOGOS = {
 export default function App() {
   const [tab,       setTab]       = useState("home");
   const [dark,      setDark]      = useState(() => loadTheme());
-  const [res,       setRes]       = useState({});
+  const [res,       setRes]       = useState(loadR);
   const [filtro,    setFiltro]    = useState("todos");
   const [rivalFil,  setRivalFil]  = useState("todos");
   const [vistaPartidos, setVistaPartidos] = useState("lista"); // "lista" | "calendario"
@@ -725,24 +725,33 @@ export default function App() {
 
             <SectionLabel mt={1}>Proximos encuentros</SectionLabel>
             <div style={{background:T.surface, margin:"0 20px", borderRadius:10, border:"1px solid "+T.border, overflow:"hidden"}}>
-              {enriched.filter(p=>p.estado==="futuro"&&!p.libre&&p.dia!=="CEDE").slice(0,4).map((p,i,arr) => {
+              {enriched.filter(p=>p.estado==="futuro"&&p.dia!=="CEDE").slice(0,5).map((p,i,arr) => {
                 const rival = p.cond==="LOCAL" ? p.visita : p.local;
                 return (
                   <div key={i} style={{padding:"13px 16px", borderBottom:i<arr.length-1?"1px solid "+T.divider:"none",
-                    display:"flex", alignItems:"center", gap:12}}>
+                    display:"flex", alignItems:"center", gap:12, opacity:p.libre?.5:1}}>
                     <div style={{minWidth:28, fontSize:10, color:T.t3}}>{"F"+p.f}</div>
-                    <TeamBadge equipo={rival} size={26}/>
-                    <div style={{flex:1, minWidth:0}}>
-                      <div style={{fontSize:14, fontWeight:700, color:T.t1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>
-                        {"vs "+N(rival)}
+                    {p.libre ? (
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13, color:T.t3, fontStyle:"italic"}}>Fecha libre</div>
+                        <div style={{fontSize:11, color:T.t3, marginTop:2}}>{fmtDia(p.dia)}</div>
                       </div>
-                      <div style={{fontSize:11, color:T.t3, marginTop:2}}>
-                        {fmtDia(p.dia)+" - "+((!p.hora||p.hora==="CEDE")?"Hora a confirmar":p.hora.replace(".",":")+"hs")}
-                      </div>
-                    </div>
-                    <div style={{fontSize:10, color:T.t3, flexShrink:0}}>
-                      {p.cond==="LOCAL"?"Local":"Visitante"}
-                    </div>
+                    ) : (
+                      <>
+                        <TeamBadge equipo={rival} size={26}/>
+                        <div style={{flex:1, minWidth:0}}>
+                          <div style={{fontSize:14, fontWeight:700, color:T.t1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>
+                            {"vs "+N(rival)}
+                          </div>
+                          <div style={{fontSize:11, color:T.t3, marginTop:2}}>
+                            {fmtDia(p.dia)+" - "+((!p.hora||p.hora==="CEDE")?"Hora a confirmar":p.hora.replace(".",":")+"hs")}
+                          </div>
+                        </div>
+                        <div style={{fontSize:10, color:T.t3, flexShrink:0}}>
+                          {p.cond==="LOCAL"?"Local":"Visitante"}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
