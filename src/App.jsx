@@ -252,18 +252,49 @@ export default function App() {
     return idx >= 0 ? idx : 1;
   });
   const [diaSelCal, setDiaSelCal] = useState(null);
-  const [cargaIdx,  setCargaIdx]  = useState(0);
-  const [inputGL,   setInputGL]   = useState("");
-  const [inputGR,   setInputGR]   = useState("");
-  const [sets,      setSets]      = useState([["",""],["",""],["",""],["",""],["",""]]);
-  const [feedback,  setFeedback]  = useState(null);
-  const [rankEdit,  setRankEdit]  = useState(false);
   const [rankBase,  setRankBase]  = useState(RANKING_BASE);
-  const [mostrarCargar, setMostrarCargar] = useState(false);
   const [selUltimo, setSelUltimo] = useState(null);
 
   const T = dark ? DARK : LIGHT;
   useEffect(() => { setRes(loadR()); }, []);
+
+  // Fetch ranking from copafacil via Vercel Function
+  useEffect(() => {
+    const fetchRanking = async () => {
+      try {
+        // First explore the structure
+        const exploreR = await fetch("/api/copafacil?type=explore");
+        const explore  = await exploreR.json();
+        console.log("Copafacil structure:", explore);
+
+        // Try to get standing
+        const standR = await fetch("/api/copafacil?type=standing");
+        const stand  = await standR.json();
+        console.log("Copafacil standing:", stand);
+
+        if (stand && stand.data && !stand.error) {
+          // Parse and update rankBase with copafacil data
+          const raw = stand.data;
+          if (Array.isArray(raw)) {
+            const newBase = raw.map((team, i) => ({
+              equipo: team.name || team.team_name || "?",
+              pts:    team.pts  || team.points    || 0,
+              j:      team.j    || team.played    || 0,
+              g:      team.g    || team.won       || 0,
+              p:      team.p    || team.lost      || 0,
+              sf:     team.sf   || team.pf        || 0,
+              sc:     team.sc   || team.pa        || 0,
+            })).filter(t => t.equipo !== "ULP");
+            if (newBase.length > 0) setRankBase(newBase);
+          }
+        }
+      } catch(e) {
+        console.log("Copafacil fetch error:", e.message);
+      }
+    };
+    fetchRanking();
+  }, []);
+
   const toggleTheme = () => { const nd=!dark; setDark(nd); saveTheme(nd); };
 
   const ranking    = buildRankingLocal(res, rankBase);
@@ -272,9 +303,7 @@ export default function App() {
   const pByDay     = {};
   enriched.forEach(p => { if (p.fechaDate) pByDay[p.fechaDate.getMonth()+"-"+p.fechaDate.getDate()] = p; });
 
-  const pendientes   = enriched.filter(p => (p.estado==="pasado"||p.estado==="hoy") && !p.libre && !res[p.f]);
   const conRes       = enriched.filter(p => res[p.f] && !p.libre);
-  const partidoCarga = pendientes[cargaIdx] ?? null;
   const prox         = enriched.find(p => p.estado==="futuro" && !p.libre && p.dia!=="CEDE");
 
   const PJ  = conRes.length;
@@ -298,24 +327,8 @@ export default function App() {
   const proximos = filtrados.filter(p => p.estado!=="pasado");
   const pasados  = filtrados.filter(p => p.estado==="pasado");
 
-  const guardarCarga = () => {
-    if (!partidoCarga) return;
-    const gL=parseInt(inputGL), gV=parseInt(inputGR);
-    if (isNaN(gL)||isNaN(gV)||gL<0||gV<0||gL>3||gV>3||gL===gV) {
-      setFeedback({tipo:"err",txt:"Sets invalidos (ej: 3-1)"}); setTimeout(()=>setFeedback(null),2000); return;
-    }
-    const parciales = sets.filter(([a,b])=>a!==""&&b!=="").map(([a,b])=>[parseInt(a),parseInt(b)]);
-    const p  = partidoCarga;
-    const r2 = getULPSets({gL,gV},p)>getRivalSets({gL,gV},p) ? "G" : "P";
-    const n  = {...res, [p.f]:{gL,gV,sets:parciales,src:"manual"}};
-    setRes(n); saveR(n);
-    setFeedback({tipo:r2, txt:r2==="G" ? "Ganamos "+getULPSets({gL,gV},p)+"-"+getRivalSets({gL,gV},p) : "Perdimos "+getULPSets({gL,gV},p)+"-"+getRivalSets({gL,gV},p)});
-    setInputGL(""); setInputGR(""); setSets([["",""],["",""],["",""],["",""],["",""]]);
-    setTimeout(()=>{ setFeedback(null); if(cargaIdx>=pendientes.length-1) setCargaIdx(0); }, 2000);
-  };
 
   const borrar    = (f) => { const n={...res}; delete n[f]; setRes(n); saveR(n); };
-  const resetSets = ()  => { setInputGL(""); setInputGR(""); setSets([["",""],["",""],["",""],["",""],["",""]]);};
 
   const SectionLabel = ({ children, mt=0 }) => (
     <div style={{padding:(mt?20:14)+"px 20px 8px", display:"flex", alignItems:"center", gap:10}}>
@@ -350,8 +363,16 @@ export default function App() {
 
     if (esLibre) {
       return (
-        <div style={{padding:"11px 20px", borderBottom:"1px solid "+T.divider, opacity:.4}}>
-          <span style={{fontSize:12, color:T.t3}}>{"Fecha "+p.f+"  -  "+fmtDia(p.dia)+"  -  Fecha libre"}</span>
+        <div style={{padding:"14px 20px", borderBottom:"1px solid "+T.divider,
+          background:dark?"#0f0f0f":"#fafafa", borderLeft:"3px solid "+T.border}}>
+          <div style={{display:"flex", alignItems:"center", gap:10}}>
+            <span style={{fontSize:11, color:T.t3}}>{"Fecha "+p.f}</span>
+            <span style={{fontSize:11, color:T.border}}>-</span>
+            <span style={{fontSize:11, color:T.t3}}>{fmtDia(p.dia)}</span>
+            <span style={{marginLeft:"auto", fontSize:10, fontWeight:700,
+              background:T.elevated, color:T.t3, padding:"2px 8px", borderRadius:4,
+              letterSpacing:.5, textTransform:"uppercase"}}>Fecha libre</span>
+          </div>
         </div>
       );
     }
@@ -555,7 +576,7 @@ export default function App() {
         {/* HEADER */}
         <div style={{borderBottom:"1px solid "+T.divider, padding:"18px 20px 12px"}}>
           <div style={{display:"flex", alignItems:"center", gap:14}}>
-            <img src={ESCUDO} alt="ULP" style={{width:40, height:40, objectFit:"contain",
+            <img alt="ULP" style={{width:40, height:40, objectFit:"contain",
               display:"block"}} src={dark ? ESCUDO_DARK : ESCUDO}/>
             <div style={{flex:1}}>
               <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:17, fontWeight:900,
@@ -826,11 +847,13 @@ export default function App() {
                     const sel   = diaSelCal===dia;
                     const hasP  = p && !p.libre;
                     const cellBg = sel ? T.t1 :
+                      p?.libre ? (dark?"#1a1a1a":"#f0f0f0") :
                       r === "G" ? RWIN :
                       r === "P" ? RLOS :
                       hasP ? (dark?"#333333":"#222222") :
                       "transparent";
                     const cellTextColor = sel ? T.bg :
+                      p?.libre ? T.t3 :
                       (r || hasP) ? "#ffffff" :
                       esHoy ? T.t1 : T.t3;
                     return (
@@ -848,7 +871,7 @@ export default function App() {
                   })}
                 </div>
                 <div style={{display:"flex", gap:14, marginTop:14, flexWrap:"wrap"}}>
-                  {[[dark?"#333333":"#222222","Partido"],[RWIN,"Ganado"],[RLOS,"Perdido"]].map(([bg,l]) => (
+                  {[[dark?"#1a1a1a":"#f0f0f0","Libre"],[dark?"#333333":"#222222","Partido"],[RWIN,"Ganado"],[RLOS,"Perdido"]].map(([bg,l]) => (
                     <div key={l} style={{display:"flex", alignItems:"center", gap:6}}>
                       <div style={{width:14, height:14, borderRadius:3, background:bg}}/>
                       <span style={{fontSize:11, color:T.t3}}>{l}</span>
@@ -861,168 +884,9 @@ export default function App() {
           </div>
         )}
 
-        {/* TABLA (STATS) + CARGAR integrado */}
+        {/* TABLA (STATS) */}
         {tab==="stats" && (
           <div style={{padding:"20px"}}>
-            {/* Toggle cargar resultados */}
-            <button onClick={()=>setMostrarCargar(v=>!v)}
-              style={{width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between",
-                background:mostrarCargar?T.t1:T.surface, border:"1px solid "+(mostrarCargar?T.t1:T.border),
-                borderRadius:10, padding:"14px 18px", marginBottom:14, cursor:"pointer"}}>
-              <div style={{display:"flex", alignItems:"center", gap:10}}>
-                <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:15, fontWeight:900,
-                  color:mostrarCargar?T.bg:T.t1}}>Cargar resultado</span>
-                {pendientes.length>0 && (
-                  <span style={{fontSize:11, fontWeight:700, background:RLOS, color:"#fff",
-                    borderRadius:10, padding:"2px 8px"}}>{pendientes.length}</span>
-                )}
-              </div>
-              <span style={{fontSize:18, color:mostrarCargar?T.bg:T.t3}}>{mostrarCargar?"v":">"}</span>
-            </button>
-
-            {mostrarCargar && (
-              <div style={{marginBottom:20}}>
-                <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14}}>
-                  <div style={{fontSize:13, color:T.t3}}>{pendientes.length>0?pendientes.length+" pendiente"+(pendientes.length!==1?"s":""):"Todo al dia"}</div>
-                </div>
-                {pendientes.length===0 ? (
-                  <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:12, padding:"28px 20px", textAlign:"center"}}>
-                    <div style={{fontSize:28, marginBottom:8}}>&#10003;</div>
-                    <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:15, color:T.t1, marginBottom:4}}>Todo cargado</div>
-                    <div style={{fontSize:12, color:T.t3}}>No hay partidos sin resultado</div>
-                  </div>
-                ) : (
-                  <div>
-                    {pendientes.length>1 && (
-                      <div style={{display:"flex", gap:6, marginBottom:14, flexWrap:"wrap"}}>
-                        <button disabled={cargaIdx===0} onClick={()=>{setCargaIdx(i=>i-1);resetSets();}}
-                          style={{padding:"7px 12px", border:"1px solid "+T.border, background:T.surface,
-                            color:cargaIdx===0?T.t3:T.t1, borderRadius:8, fontSize:14, fontWeight:700}}>{"<"}</button>
-                        {pendientes.map((_,i) => (
-                          <button key={i} onClick={()=>{setCargaIdx(i);resetSets();}}
-                            style={{padding:"7px 12px", border:"1px solid "+(cargaIdx===i?T.t1:T.border),
-                              background:cargaIdx===i?T.t1:T.surface, color:cargaIdx===i?T.bg:T.t2,
-                              borderRadius:8, fontSize:13, fontWeight:700}}>
-                            {"F"+pendientes[i].f}
-                          </button>
-                        ))}
-                        <button disabled={cargaIdx===pendientes.length-1} onClick={()=>{setCargaIdx(i=>i+1);resetSets();}}
-                          style={{padding:"7px 12px", border:"1px solid "+T.border, background:T.surface,
-                            color:cargaIdx===pendientes.length-1?T.t3:T.t1, borderRadius:8, fontSize:14, fontWeight:700}}>{">"}</button>
-                      </div>
-                    )}
-                    {feedback && (
-                      <div style={{background:feedback.tipo==="G"?"#f0fdf4":feedback.tipo==="P"?"#fef2f2":T.surface,
-                        border:"1px solid "+(feedback.tipo==="G"?"#bbf7d0":feedback.tipo==="P"?"#fecaca":T.border),
-                        borderRadius:10, padding:"18px", textAlign:"center", marginBottom:14}}>
-                        <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:22, fontWeight:900,
-                          color:feedback.tipo==="G"?RWIN:feedback.tipo==="P"?RLOS:T.t2}}>{feedback.txt}</div>
-                      </div>
-                    )}
-                    {!feedback && partidoCarga && (
-                      <div>
-                        <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"14px 16px", marginBottom:12}}>
-                          <div style={{fontSize:11, color:T.t3, marginBottom:6}}>{"Fecha "+partidoCarga.f+" - "+fmtDia(partidoCarga.dia)}</div>
-                          <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:17, fontWeight:900, color:T.t1, marginBottom:3}}>
-                            {"ULP vs "+N(partidoCarga.cond==="LOCAL"?partidoCarga.visita:partidoCarga.local)}
-                          </div>
-                          <div style={{fontSize:11, color:T.t3}}>{partidoCarga.cond==="LOCAL"?"Local":"Visitante"}</div>
-                        </div>
-                        <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"18px", marginBottom:10}}>
-                          <div style={{fontSize:11, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", textAlign:"center", marginBottom:14}}>Sets ganados</div>
-                          <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:16}}>
-                            <div style={{textAlign:"center", flex:1}}>
-                              <div style={{fontSize:11, color:T.t3, marginBottom:8}}>ULP</div>
-                              <input type="number" min="0" max="3" placeholder="0" value={inputGL}
-                                onChange={e=>setInputGL(e.target.value)} onKeyDown={e=>e.key==="Enter"&&guardarCarga()}
-                                style={{width:72, height:64, background:T.inputBg, border:"1px solid "+T.inputBorder,
-                                  borderRadius:8, fontFamily:"Archivo Black,sans-serif", fontSize:32, fontWeight:900,
-                                  textAlign:"center", color:T.t1, outline:"none", display:"block", margin:"0 auto"}}/>
-                            </div>
-                            <div style={{fontSize:20, color:T.t3, fontWeight:700}}>-</div>
-                            <div style={{textAlign:"center", flex:1}}>
-                              <div style={{fontSize:11, color:T.t3, marginBottom:8, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
-                                {N(partidoCarga.cond==="LOCAL"?partidoCarga.visita:partidoCarga.local)}
-                              </div>
-                              <input type="number" min="0" max="3" placeholder="0" value={inputGR}
-                                onChange={e=>setInputGR(e.target.value)} onKeyDown={e=>e.key==="Enter"&&guardarCarga()}
-                                style={{width:72, height:64, background:T.inputBg, border:"1px solid "+T.inputBorder,
-                                  borderRadius:8, fontFamily:"Archivo Black,sans-serif", fontSize:32, fontWeight:900,
-                                  textAlign:"center", color:T.t1, outline:"none", display:"block", margin:"0 auto"}}/>
-                            </div>
-                          </div>
-                          <div style={{display:"flex", gap:6, justifyContent:"center", marginTop:12, flexWrap:"wrap"}}>
-                            {[["3","0"],["3","1"],["3","2"],["0","3"],["1","3"],["2","3"]].map(([a,b]) => (
-                              <button key={a+"-"+b} onClick={()=>{setInputGL(a);setInputGR(b);}}
-                                style={{padding:"6px 12px", background:T.elevated, border:"1px solid "+T.border,
-                                  borderRadius:6, color:T.t2, fontSize:13, fontWeight:700}}>
-                                {a+"-"+b}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"14px 16px", marginBottom:12}}>
-                          <div style={{fontSize:11, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12}}>Parciales por set (opcional)</div>
-                          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8}}>
-                            {sets.map(([a,b],i) => (
-                              <div key={i} style={{display:"flex", alignItems:"center", gap:6, background:T.elevated, borderRadius:8, padding:"8px 10px"}}>
-                                <span style={{fontSize:11, color:T.t3, minWidth:30}}>{"Set "+(i+1)}</span>
-                                <input type="number" min="0" max="99" placeholder="0" value={a}
-                                  onChange={e=>{const n=[...sets];n[i]=[e.target.value,n[i][1]];setSets(n);}}
-                                  style={{width:44, height:36, background:T.bg, border:"1px solid "+T.border,
-                                    borderRadius:6, fontSize:15, fontWeight:700, textAlign:"center", color:T.t1, outline:"none"}}/>
-                                <span style={{fontSize:13, color:T.t3, fontWeight:700}}>-</span>
-                                <input type="number" min="0" max="99" placeholder="0" value={b}
-                                  onChange={e=>{const n=[...sets];n[i]=[n[i][0],e.target.value];setSets(n);}}
-                                  style={{width:44, height:36, background:T.bg, border:"1px solid "+T.border,
-                                    borderRadius:6, fontSize:15, fontWeight:700, textAlign:"center", color:T.t1, outline:"none"}}/>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div style={{display:"flex", gap:8}}>
-                          {pendientes.length>1 && <BtnSec onClick={()=>{setCargaIdx(i=>(i+1)%pendientes.length);resetSets();}}>Saltear</BtnSec>}
-                          <BtnPri onClick={guardarCarga} full={pendientes.length===1} style={{flex:pendientes.length>1?1:undefined}}>Guardar</BtnPri>
-                        </div>
-                      </div>
-                    )}
-                    {conRes.length>0 && (
-                      <div style={{marginTop:20}}>
-                        <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10}}>
-                          {"Resultados cargados ("+conRes.length+")"}
-                        </div>
-                        <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, overflow:"hidden"}}>
-                          {[...conRes].sort((a,b)=>a.f-b.f).map((p,i,arr) => {
-                            const r = calcRes(res[p.f],p);
-                            const rival = p.cond==="LOCAL" ? p.visita : p.local;
-                            return (
-                              <div key={p.f} style={{padding:"11px 14px",
-                                borderBottom:i<arr.length-1?"1px solid "+T.divider:"none",
-                                display:"flex", alignItems:"center", gap:10, borderLeft:"3px solid "+rColor(r)}}>
-                                <span style={{fontSize:11, color:T.t3, minWidth:24}}>{"F"+p.f}</span>
-                                <div style={{flex:1, minWidth:0}}>
-                                  <div style={{fontSize:13, fontWeight:700, color:T.t1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
-                                    {"ULP "+getULPSets(res[p.f],p)+"-"+getRivalSets(res[p.f],p)+" "+N(rival)}
-                                  </div>
-                                  {res[p.f].sets && res[p.f].sets.length>0 && (
-                                    <div style={{fontSize:10, color:T.t3, marginTop:2}}>
-                                      {res[p.f].sets.map(([a,b])=>a+"-"+b).join(" / ")}
-                                    </div>
-                                  )}
-                                </div>
-                                <span style={{fontSize:11, fontWeight:700, color:rColor(r)}}>{r==="G"?"Ganado":"Perdido"}</span>
-                                <button onClick={()=>borrar(p.f)}
-                                  style={{background:"none", border:"none", color:T.t3, fontSize:16, padding:"0 4px"}}>x</button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
             <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"18px", marginBottom:12}}>
               <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:16}}>Temporada 2026</div>
               <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, textAlign:"center", marginBottom:16}}>
@@ -1060,17 +924,13 @@ export default function App() {
             )}
 
             <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, overflow:"hidden", marginBottom:12}}>
-              <div style={{padding:"16px 20px 10px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+              <div style={{padding:"16px 20px 10px"}}>
                 <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase"}}>Tabla de posiciones</div>
-                <button onClick={()=>setRankEdit(e=>!e)}
-                  style={{background:"none", border:"none", fontSize:11, color:T.t3, textDecoration:"underline", padding:0}}>
-                  {rankEdit?"cerrar":"editar"}
-                </button>
               </div>
               <table style={{width:"100%", borderCollapse:"collapse"}}>
                 <thead>
                   <tr>
-                    {["#","Equipo","Pts","J","G","P","F","C","DS","DP"].map((h,i) => (
+                    {["#","Equipo","Pts","J","G","SF","SC"].map((h,i) => (
                       <th key={i} style={{fontSize:10, fontWeight:700, letterSpacing:1, color:T.secLabel,
                         textTransform:"uppercase", padding:"8px 6px", textAlign:i<=1?"left":"center",
                         paddingLeft:i===0?20:i===1?6:6}}>{h}</th>
@@ -1099,25 +959,18 @@ export default function App() {
                         ))
                       ) : (
                         <>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontFamily:"Archivo Black,sans-serif", fontSize:13, fontWeight:900, color:r.equipo==="ULP"?RWIN:T.t2}}>{r.pts}</td>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:T.t3}}>{r.j}</td>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:r.g>0?RWIN:T.t3}}>{r.g}</td>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:r.p>0?RLOS:T.t3}}>{r.p||0}</td>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:T.t3}}>{r.sf}</td>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:T.t3}}>{r.sc}</td>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:12, color:(r.sf-r.sc)>=0?RWIN:RLOS}}>{r.sf-r.sc}</td>
-                          <td style={{textAlign:"center", padding:"11px 4px", fontSize:11, color:T.t3}}>0</td>
+                          <td style={{textAlign:"center", padding:"12px 6px", fontFamily:"Archivo Black,sans-serif",
+                            fontSize:14, fontWeight:900, color:r.equipo==="ULP"?RWIN:T.t2}}>{r.pts}</td>
+                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.j}</td>
+                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:r.g>0?RWIN:T.t3}}>{r.g}</td>
+                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.sf}</td>
+                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.sc}</td>
                         </>
                       )}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {rankEdit && (
-                <div style={{padding:"10px 20px 16px"}}>
-                  <BtnPri onClick={()=>setRankEdit(false)} full>Guardar ranking</BtnPri>
-                </div>
-              )}
               <div style={{padding:"10px 20px 14px", fontSize:10, color:T.t3}}>
                 ULP se actualiza automaticamente - Resto: copafacil post F5
               </div>
