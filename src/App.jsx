@@ -88,10 +88,26 @@ const parseFecha = (s) => {
 
 const enriched = PARTIDOS_RAW.map(p => {
   const fd = parseFecha(p.dia);
+
   let estado = "futuro";
   if (!fd && p.dia === "CEDE") estado = "indefinido";
-  else if (fd) { estado = fd < HOY ? "pasado" : fd.toDateString() === HOY.toDateString() ? "hoy" : "futuro"; }
-  return { ...p, fechaDate: fd, estado };
+  else if (fd) {
+    estado =
+      fd < HOY
+        ? "pasado"
+        : fd.toDateString() === HOY.toDateString()
+        ? "hoy"
+        : "futuro";
+  }
+
+  return {
+    ...p,
+    fechaDate: fd,
+    estado,
+
+    // 🔥 FIX CLAVE: normalizamos el ID para que matchee Copafácil
+    resKey: p.f
+  };
 });
 
 const MESES_CAL_LIST = [...new Set(enriched.filter(p => p.fechaDate).map(p => p.fechaDate.getMonth()))];
@@ -121,7 +137,13 @@ const getDiasCal = (y, m) => {
 };
 
 const recalcULP = (res) => {
-  const cr = enriched.filter(p => res[p.f] && !p.libre);
+  const cr = enriched.filter(p =>
+  Object.values(res).some(r =>
+    r.m_set === p.f ||
+    r.id === p.f ||
+    r.match_id === p.f
+  ) && !p.libre
+)
   return { equipo:"ULP",
     pts: cr.reduce((a,p)=>a+ptsVoley(res[p.f],p),0),
     j:   cr.length,
@@ -303,7 +325,13 @@ export default function App() {
   const pByDay     = {};
   enriched.forEach(p => { if (p.fechaDate) pByDay[p.fechaDate.getMonth()+"-"+p.fechaDate.getDate()] = p; });
 
-  const conRes       = enriched.filter(p => res[p.f] && !p.libre);
+  const conRes       = enriched.filter(p =>
+  Object.values(res).some(r =>
+    r.m_set === p.f ||
+    r.id === p.f ||
+    r.match_id === p.f
+  ) && !p.libre
+)
   const prox         = enriched.find(p => p.estado==="futuro" && !p.libre && p.dia!=="CEDE");
 
   const PJ  = conRes.length;
@@ -662,35 +690,88 @@ export default function App() {
               ))}
             </div>
 
-            {ultimos.length > 0 && (
-              <div>
-                <SectionLabel mt={1}>Ultimos resultados</SectionLabel>
-                <div style={{display:"flex", gap:8, padding:"0 20px"}}>
-                  {ultimos.map((p,i) => {
-                    const r = calcRes(res[p.f],p);
-                    const isSel = selUltimo === p.f;
-                    return (
-                      <div key={i} onClick={()=>setSelUltimo(isSel?null:p.f)}
-                        style={{flex:1, background:isSel?T.t1:T.surface,
-                          border:"1px solid "+(isSel?T.t1:T.border),
-                          borderRadius:8, padding:"10px 4px 6px", textAlign:"center",
-                          borderTop:"2px solid "+rColor(r), cursor:"pointer"}}>
-                        <div style={{fontSize:10, color:isSel?T.bg:T.t3, marginBottom:4}}>{"F"+p.f}</div>
-                        <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:10, fontWeight:900, color:isSel?T.bg:rColor(r)}}>
-                          {r==="G"?"Ganado":"Perdido"}
-                        </div>
-                        <div style={{fontSize:11, fontWeight:700, color:isSel?T.bg:rColor(r), marginTop:2}}>
-                          {getULPSets(res[p.f],p)+"-"+getRivalSets(res[p.f],p)}
-                        </div>
-                        <div style={{fontSize:9, color:isSel?T.bg:T.t3, marginTop:5, lineHeight:1}}>
-                          {isSel ? "▲" : "▼"}
-                        </div>
-                      </div>
-                    );
-                  })}
+            {ultimos?.length > 0 && (
+  <div>
+    <SectionLabel mt={1}>Ultimos resultados</SectionLabel>
+
+    <div style={{display:"flex", gap:8, padding:"0 20px"}}>
+      {ultimos.map((p, i) => {
+        const r = calcRes(res?.[p.f], p);
+        const isSel = selUltimo === p.f;
+
+        return (
+          <div
+            key={i}
+            onClick={() => setSelUltimo(isSel ? null : p.f)}
+            style={{
+              flex: 1,
+              background: isSel ? T.t1 : T.surface,
+              border: "1px solid " + (isSel ? T.t1 : T.border),
+              borderRadius: 8,
+              padding: "10px 4px 6px",
+              textAlign: "center",
+              borderTop: "2px solid " + rColor(r),
+              cursor: "pointer"
+            }}
+          >
+            <div style={{fontSize:10, color:isSel ? T.bg : T.t3, marginBottom:4}}>
+              {"F" + p.f}
+            </div>
+
+            <div style={{
+              fontFamily:"Archivo Black,sans-serif",
+              fontSize:10,
+              fontWeight:900,
+              color:isSel ? T.bg : rColor(r)
+            }}>
+              {r === "G" ? "Ganado" : r === "P" ? "Perdido" : "—"}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
                 </div>
                 {/* Detalle del partido seleccionado */}
-                {selUltimo && (()=>{
+                {selUltimo && (
+  (() => {
+    const p = enriched.find(x => x.f === selUltimo);
+    if (!p || !res?.[p.f]) return null;
+    const r = calcRes(res[p.f], p);
+    const rival = p.cond === "LOCAL" ? p.visita : p.local;
+
+    return (
+      <div style={{
+        margin:"10px 20px 0",
+        background:T.surface,
+        border:"1px solid "+T.border,
+        borderLeft:"3px solid "+rColor(r),
+        borderRadius:10,
+        padding:"14px 16px"
+      }}>
+        <div style={{fontSize:10, color:T.t3, marginBottom:8}}>
+          {"Fecha "+p.f+" - "+fmtDia(p.dia)+" - "+(p.cond==="LOCAL"?"Local":"Visitante")}
+        </div>
+
+        <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:6}}>
+          <TeamBadge equipo="ULP" size={28}/>
+          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:18, fontWeight:900, color:T.t1}}>
+            ULP
+          </span>
+
+          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:18, fontWeight:900, color:rColor(r)}}>
+            {getULPSets(res[p.f],p)+" - "+getRivalSets(res[p.f],p)}
+          </span>
+
+          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:18, fontWeight:900, color:T.t1}}>
+            {N(rival)}
+          </span>
+        </div>
+      </div>
+    );
+  })()
+)}
                   const p = enriched.find(x=>x.f===selUltimo);
                   if (!p || !res[p.f]) return null;
                   const r = calcRes(res[p.f],p);
@@ -892,114 +973,116 @@ export default function App() {
             )}
           </div>
         )}
-
         {/* TABLA (STATS) */}
-        {tab==="stats" && (
-          <div style={{padding:"20px"}}>
-            <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"18px", marginBottom:12}}>
-              <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:16}}>Temporada 2026</div>
-              <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, textAlign:"center", marginBottom:16}}>
-                {[["Partidos\njugados",PJ,T.t1],["Ganados",PG,RWIN],["Perdidos",PP,RLOS],["Puntos",PTS,RWIN]].map(([l,v,c]) => (
-                  <div key={l}>
-                    <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:24, fontWeight:900, color:c, lineHeight:1}}>{v}</div>
-                    <div style={{fontSize:9, color:T.t3, marginTop:5, whiteSpace:"pre-line", lineHeight:1.3}}>{l}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{borderTop:"1px solid "+T.divider, paddingTop:16, display:"flex", justifyContent:"space-around"}}>
-                {[["A favor",SF,RWIN],["En contra",SC,RLOS],["Diferencia",SF-SC,SF>=SC?RWIN:RLOS]].map(([l,v,c]) => (
-                  <div key={l} style={{textAlign:"center"}}>
-                    <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:20, fontWeight:900, color:c, lineHeight:1}}>
-                      {v>0&&l==="Diferencia"?"+":""}{v}
-                    </div>
-                    <div style={{fontSize:10, color:T.t3, marginTop:4}}>{l}</div>
-                  </div>
-                ))}
-              </div>
+{tab==="stats" && (
+  <div style={{padding:"20px"}}>
+
+    {/* RESUMEN GENERAL */}
+    <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"18px", marginBottom:12}}>
+      <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:16}}>
+        Temporada 2026
+      </div>
+
+      <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, textAlign:"center"}}>
+        {[
+          ["Partidos\njugados", PJ, T.t1],
+          ["Ganados", PG, RWIN],
+          ["Perdidos", PP, RLOS],
+          ["Puntos", PTS, RWIN]
+        ].map(([l,v,c]) => (
+          <div key={l}>
+            <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:24, fontWeight:900, color:c}}>
+              {v}
             </div>
-
-            {PJ>0 && (
-              <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12}}>
-                {[["Local ("+locCR.length+"PJ)",PGL,locCR.length],["Visitante ("+visCR.length+"PJ)",PGV,visCR.length]].map(([l,g,j]) => (
-                  <div key={l} style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"16px", textAlign:"center"}}>
-                    <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:26, fontWeight:900, color:T.t1, lineHeight:1}}>
-                      {j>0?Math.round(g/j*100):0}%
-                    </div>
-                    <div style={{fontSize:10, color:T.t3, marginTop:5}}>{l}</div>
-                    <div style={{fontSize:11, color:T.t3, marginTop:2}}>{g+" ganados"}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, overflow:"hidden", marginBottom:12}}>
-              <div style={{padding:"16px 20px 10px"}}>
-                <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase"}}>Tabla de posiciones</div>
-              </div>
-              <table style={{width:"100%", borderCollapse:"collapse"}}>
-                <thead>
-                  <tr>
-                    {["#","Equipo","Pts","J","G","SF","SC"].map((h,i) => (
-                      <th key={i} style={{fontSize:10, fontWeight:700, letterSpacing:1, color:T.secLabel,
-                        textTransform:"uppercase", padding:"8px 6px", textAlign:i<=1?"left":"center",
-                        paddingLeft:i===0?20:i===1?6:6}}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranking.map(r => (
-                    <tr key={r.equipo} style={{background:r.equipo==="ULP"?T.ulpRowBg:T.bg, borderTop:"1px solid "+T.divider}}>
-                      <td style={{padding:"12px 6px 12px 20px", fontSize:12, fontWeight:700, color:r.equipo==="ULP"?T.t1:T.t3}}>{r.pos}</td>
-                      <td style={{padding:"11px 6px", fontSize:13, fontWeight:r.equipo==="ULP"?700:500,
-                        color:r.equipo==="ULP"?T.t1:T.t2, maxWidth:140}}>
-                        <div style={{display:"flex", alignItems:"center", gap:8, overflow:"hidden"}}>
-                          <TeamBadge equipo={r.equipo} size={24}/>
-                          <span style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{N(r.equipo)}</span>
-                        </div>
-                      </td>
-                      {rankEdit && r.equipo!=="ULP" ? (
-                        ["pts","j","g","sf","sc"].map(k => (
-                          <td key={k} style={{textAlign:"center", padding:"6px 3px"}}>
-                            <input type="number" min="0" value={r[k]}
-                              onChange={e=>{const v=+e.target.value||0;setRankBase(p=>p.map(x=>x.equipo===r.equipo?{...x,[k]:v}:x));}}
-                              style={{width:36, height:28, background:T.elevated, border:"1px solid "+T.border,
-                                borderRadius:4, fontSize:12, fontWeight:700, textAlign:"center", color:T.t1, outline:"none"}}/>
-                          </td>
-                        ))
-                      ) : (
-                        <>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontFamily:"Archivo Black,sans-serif",
-                            fontSize:14, fontWeight:900, color:r.equipo==="ULP"?RWIN:T.t2}}>{r.pts}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.j}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:r.g>0?RWIN:T.t3}}>{r.g}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.sf}</td>
-                          <td style={{textAlign:"center", padding:"12px 6px", fontSize:13, color:T.t3}}>{r.sc}</td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{padding:"10px 20px 14px", fontSize:10, color:T.t3}}>
-                ULP se actualiza automaticamente - Resto: copafacil post F5
-              </div>
-            </div>
-
-            <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"16px 18px"}}>
-              <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12}}>Temporada</div>
-              <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8}}>
-                {[["Clasificatoria","12 Abr - 26 Oct"],["Play Off","31 Oct - 13 Dic"],
-                  ["Receso invernal","20 Jul - 3 Ago"],["Partidos jugados",jugados+" de 21"]].map(([l,v]) => (
-                  <div key={l}>
-                    <div style={{fontSize:10, color:T.t3, marginBottom:2}}>{l}</div>
-                    <div style={{fontSize:13, fontWeight:600, color:T.t2}}>{v}</div>
-                  </div>
-                ))}
-              </div>
+            <div style={{fontSize:9, color:T.t3, marginTop:5, whiteSpace:"pre-line"}}>
+              {l}
             </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
-  );
-}
+
+    {/* EFICIENCIA LOCAL / VISITANTE */}
+    {PJ > 0 && (
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12}}>
+        {[
+          ["Local ("+locCR.length+"PJ)", PGL, locCR.length],
+          ["Visitante ("+visCR.length+"PJ)", PGV, visCR.length]
+        ].map(([l,g,j]) => (
+          <div key={l} style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"16px", textAlign:"center"}}>
+            <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:26, fontWeight:900, color:T.t1}}>
+              {j>0 ? Math.round((g/j)*100) : 0}%
+            </div>
+            <div style={{fontSize:10, color:T.t3, marginTop:5}}>{l}</div>
+            <div style={{fontSize:11, color:T.t3, marginTop:2}}>{g+" ganados"}</div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* TABLA DE POSICIONES */}
+    <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, overflow:"hidden"}}>
+
+      <div style={{padding:"16px 20px 10px"}}>
+        <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase"}}>
+          Tabla de posiciones
+        </div>
+      </div>
+
+      <table style={{width:"100%", borderCollapse:"collapse"}}>
+        <thead>
+          <tr>
+            {["#","Equipo","Pts","J","G","SF","SC"].map((h,i) => (
+              <th key={i} style={{
+                fontSize:10,
+                fontWeight:700,
+                letterSpacing:1,
+                color:T.secLabel,
+                textTransform:"uppercase",
+                padding:"8px 6px",
+                textAlign:i<=1?"left":"center",
+                paddingLeft:i===0?20:6
+              }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {(ranking || []).map(r => (
+            <tr key={r.equipo}
+              style={{
+                background: r.equipo==="ULP" ? T.ulpRowBg : T.bg,
+                borderTop:"1px solid "+T.divider
+              }}>
+
+              <td style={{padding:"12px 6px 12px 20px", fontSize:12, fontWeight:700}}>
+                {r.pos}
+              </td>
+
+              <td style={{padding:"11px 6px", fontSize:13, fontWeight:500}}>
+                <div style={{display:"flex", alignItems:"center", gap:8}}>
+                  <TeamBadge equipo={r.equipo} size={24}/>
+                  <span>{N(r.equipo)}</span>
+                </div>
+              </td>
+
+              <td style={{textAlign:"center"}}>{r.pts}</td>
+              <td style={{textAlign:"center"}}>{r.j}</td>
+              <td style={{textAlign:"center", color:r.g>0?RWIN:T.t3}}>{r.g}</td>
+              <td style={{textAlign:"center"}}>{r.sf}</td>
+              <td style={{textAlign:"center"}}>{r.sc}</td>
+
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div style={{padding:"10px 20px 14px", fontSize:10, color:T.t3}}>
+        Datos automáticos desde Copafacil (sin edición manual)
+      </div>
+    </div>
+
+  </div>
+)}
