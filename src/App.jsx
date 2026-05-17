@@ -931,30 +931,49 @@ export default function App() {
 {tab==="stats" && (
   <div style={{padding:"20px"}}>
 
-    {/* RESUMEN GENERAL */}
-    <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"18px", marginBottom:12}}>
-      <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:16}}>
-        Temporada 2026
-      </div>
-
-      <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, textAlign:"center"}}>
-        {[
-          ["Partidos\njugados", PJ, T.t1],
-          ["Ganados", PG, RWIN],
-          ["Perdidos", PP, RLOS],
-          ["Puntos", PTS, RWIN]
-        ].map(([l,v,c]) => (
-          <div key={l}>
-            <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:24, fontWeight:900, color:c}}>
-              {v}
-            </div>
-            <div style={{fontSize:9, color:T.t3, marginTop:5, whiteSpace:"pre-line"}}>
-              {l}
-            </div>
+    {/* RESUMEN ULP */}
+    {(() => {
+      const ulpRow = (ranking||[]).find(r=>r.equipo==="ULP");
+      const ultRes = conRes.slice(-5).reverse();
+      return (
+        <div style={{background:T.surface, border:"1px solid "+T.border, borderRadius:10, padding:"18px", marginBottom:12}}>
+          <div style={{fontSize:10, color:T.secLabel, letterSpacing:1.5, textTransform:"uppercase", marginBottom:14}}>
+            ULP · Temporada 2026
           </div>
-        ))}
-      </div>
-    </div>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, textAlign:"center", marginBottom:14}}>
+            {[
+              ["Posición", ulpRow ? ulpRow.pos+"º" : "-", T.t1],
+              ["Ganados", ulpRow ? ulpRow.g : 0, RWIN],
+              ["Perdidos", ulpRow ? ulpRow.p : 0, RLOS],
+              ["Puntos", ulpRow ? ulpRow.pts : 0, RWIN],
+            ].map(([l,v,c]) => (
+              <div key={l}>
+                <div style={{fontFamily:"Archivo Black,sans-serif", fontSize:24, fontWeight:900, color:c}}>{v}</div>
+                <div style={{fontSize:9, color:T.t3, marginTop:5}}>{l}</div>
+              </div>
+            ))}
+          </div>
+          {ultRes.length > 0 && (
+            <div>
+              <div style={{fontSize:10, color:T.t3, marginBottom:8}}>Últimos resultados</div>
+              <div style={{display:"flex", gap:6}}>
+                {ultRes.map((p,i) => {
+                  const r = calcRes(res[p.f], p);
+                  return (
+                    <div key={i} style={{
+                      width:32, height:32, borderRadius:6, display:"flex", alignItems:"center",
+                      justifyContent:"center", fontFamily:"Archivo Black,sans-serif",
+                      fontSize:13, fontWeight:900, color:"#fff",
+                      background: r==="G" ? RWIN : r==="P" ? RLOS : T.t3
+                    }}>{r||"—"}</div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    })()}
 
     {/* EFICIENCIA LOCAL / VISITANTE */}
     {PJ > 0 && (
