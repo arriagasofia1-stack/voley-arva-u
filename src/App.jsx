@@ -67,8 +67,8 @@ const RESULTADOS_INICIALES = {
 };
 
 const RANKING_BASE = [
-  { equipo:"ULP",            pts:9, j:3, g:3, p:0, sf:9,  sc:1  },
   { equipo:"BPLP B",         pts:9, j:4, g:3, p:1, sf:10, sc:4  },
+  { equipo:"ULP",            pts:9, j:3, g:3, p:0, sf:9,  sc:1  },
   { equipo:"UNLP C",         pts:9, j:4, g:3, p:1, sf:9,  sc:6  },
   { equipo:"VILLA GARIBALDI",pts:6, j:4, g:2, p:2, sf:6,  sc:6  },
   { equipo:"SUDA B",         pts:3, j:1, g:1, p:0, sf:3,  sc:0  },
