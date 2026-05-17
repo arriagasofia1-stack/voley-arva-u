@@ -37,7 +37,7 @@ const PARTIDOS_RAW = [
   { f:3,  dia:"DOM 26/4",  local:"ULP",            visita:"ALB-VGX B",       hora:"13.30", cancha:"ULP",            cond:"LOCAL"  },
   { f:4,  dia:"SAB 3/5",   local:"EMVM B",         visita:"ULP",             hora:"",      cancha:"",               cond:"VISITA", libre:true },
   { f:5,  dia:"DOM 10/5",  local:"ULP",            visita:"VILLA GARIBALDI", hora:"12.00", cancha:"ULP",            cond:"LOCAL"  },
-  { f:6,  dia:"DOM 17/5",  local:"UNLP C",         visita:"ULP",             hora:"14.30", cancha:"UNLP",           cond:"VISITA" },
+  { f:6,  dia:"DOM 17/5",  local:"ULP",             visita:"UNLP C",          hora:"14.30", cancha:"ULP",            cond:"LOCAL"  },
   { f:7,  dia:"DOM 24/5",  local:"ULP",            visita:"BPLP B",          hora:"13.30", cancha:"ULP",            cond:"LOCAL",  libre:true },
   { f:8,  dia:"DOM 31/5",  local:"BPLP C",         visita:"ULP",             hora:"10.30", cancha:"BPLP",           cond:"VISITA" },
   { f:9,  dia:"DOM 7/6",   local:"ULP",            visita:"JUVE B",          hora:"13.30", cancha:"ULP",            cond:"LOCAL"  },
@@ -64,6 +64,7 @@ const RESULTADOS_INICIALES = {
   1: { gL:3, gV:1, sets:[[25,11],[22,25],[25,10],[25,20]], src:"cf" }, // ULP 3-1 SMLH
   3: { gL:3, gV:0, sets:[[25,10],[25,20],[25,10]],         src:"cf" }, // ULP 3-0 ALB-VGX B
   5: { gL:3, gV:0, sets:[[25,12],[25,22],[25,13]],         src:"cf" },
+  6: { gL:3, gV:1, sets:[],                                src:"manual" },
   6: { gL:3, gV:1, sets:[],                                src:"manual" },
   6: { gL:3, gV:1, sets:[],                                src:"manual" }, // ULP 3-0 Villa Garibaldi
 };
