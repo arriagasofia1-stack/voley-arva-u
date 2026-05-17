@@ -350,8 +350,8 @@ export default function App() {
   const filtrados = enriched
     .filter(p => filtro==="todos" || p.cond===filtro)
     .filter(p => rivalFil==="todos" || p.local===rivalFil || p.visita===rivalFil);
-  const proximos = filtrados.filter(p => p.estado!=="pasado");
-  const pasados  = filtrados.filter(p => p.estado==="pasado");
+  const proximos = filtrados.filter(p => p.estado!=="pasado" && !res[p.f]);
+  const pasados  = filtrados.filter(p => p.estado==="pasado" || (p.estado==="hoy" && res[p.f]));
 
 
   const borrar    = (f) => { const n={...res}; delete n[f]; setRes(n); saveR(n); };
