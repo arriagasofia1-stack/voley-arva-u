@@ -922,14 +922,14 @@ export default function App() {
 {tab==="estadisticas" && (
   <div style={{padding:"20px"}}>
     {[
-      ["Victorias", (ranking||[]).slice().sort((a,b)=>b.g-a.g), r=>r.g, RWIN],
-      ["Sets a Favor", (ranking||[]).slice().sort((a,b)=>b.sf-a.sf), r=>r.sf, T.t1],
-      ["Sets en Contra", (ranking||[]).slice().sort((a,b)=>a.sc-b.sc), r=>r.sc, RLOS],
+      ["Victorias", (ranking||[]).slice().sort((a,b)=>b.g-a.g||(a.pos-b.pos)), r=>r.g, RWIN],
+      ["Sets a Favor", (ranking||[]).slice().sort((a,b)=>b.sf-a.sf||(a.pos-b.pos)), r=>r.sf, T.t1],
+      ["Sets en Contra", (ranking||[]).slice().sort((a,b)=>a.sc-b.sc||(a.pos-b.pos)), r=>r.sc, RLOS],
     ].map(([titulo, lista, val, color]) => (
       <div key={titulo} style={{background:T.surface, border:"1px solid "+T.border,
         borderRadius:10, overflow:"hidden", marginBottom:12}}>
-        <div style={{background:"#7b1113", padding:"12px 16px"}}>
-          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:14, fontWeight:900, color:"#fff"}}>{titulo}</span>
+        <div style={{padding:"12px 16px", borderBottom:"1px solid "+T.border}}>
+          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:14, fontWeight:900, color:T.t1}}>{titulo}</span>
         </div>
         <table style={{width:"100%", borderCollapse:"collapse"}}>
           <thead>
