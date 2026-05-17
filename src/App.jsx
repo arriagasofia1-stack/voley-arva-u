@@ -577,6 +577,7 @@ export default function App() {
     {id:"home",   label:"Inicio"},
     {id:"lista",  label:"Partidos"},
     {id:"stats",  label:"Tabla"},
+    {id:"estadisticas", label:"Estadísticas"},
   ];
 
   return (
@@ -928,6 +929,49 @@ export default function App() {
           </div>
         )}
         {/* TABLA (STATS) */}
+{tab==="estadisticas" && (
+  <div style={{padding:"20px"}}>
+    {[
+      ["Victorias", (ranking||[]).slice().sort((a,b)=>b.g-a.g), r=>r.g, RWIN],
+      ["Sets a Favor", (ranking||[]).slice().sort((a,b)=>b.sf-a.sf), r=>r.sf, T.t1],
+      ["Sets en Contra", (ranking||[]).slice().sort((a,b)=>a.sc-b.sc), r=>r.sc, RLOS],
+    ].map(([titulo, lista, val, color]) => (
+      <div key={titulo} style={{background:T.surface, border:"1px solid "+T.border,
+        borderRadius:10, overflow:"hidden", marginBottom:12}}>
+        <div style={{background:"#7b1113", padding:"12px 16px"}}>
+          <span style={{fontFamily:"Archivo Black,sans-serif", fontSize:14, fontWeight:900, color:"#fff"}}>{titulo}</span>
+        </div>
+        <table style={{width:"100%", borderCollapse:"collapse"}}>
+          <thead>
+            <tr style={{borderBottom:"1px solid "+T.divider}}>
+              <th style={{padding:"8px 16px", fontSize:10, fontWeight:700, color:T.secLabel,
+                textTransform:"uppercase", textAlign:"left"}}>Equipo</th>
+              <th style={{padding:"8px 16px", fontSize:10, fontWeight:700, color:T.secLabel,
+                textTransform:"uppercase", textAlign:"right"}}>Ctd</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((r,i) => (
+              <tr key={r.equipo} style={{
+                background: r.equipo==="ULP" ? T.ulpRowBg : (i%2===0?T.bg:T.surface),
+                borderBottom:"1px solid "+T.divider}}>
+                <td style={{padding:"11px 16px", fontSize:13}}>
+                  <div style={{display:"flex", alignItems:"center", gap:8}}>
+                    <TeamBadge equipo={r.equipo} size={22}/>
+                    <span style={{fontWeight:r.equipo==="ULP"?700:400, color:T.t1}}>{N(r.equipo)}</span>
+                  </div>
+                </td>
+                <td style={{padding:"11px 16px", textAlign:"right", fontFamily:"Archivo Black,sans-serif",
+                  fontSize:15, fontWeight:900, color:r.equipo==="ULP"?color:T.t2}}>{val(r)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ))}
+  </div>
+)}
+
 {tab==="stats" && (
   <div style={{padding:"20px"}}>
 
