@@ -923,9 +923,9 @@ export default function App() {
 {tab==="estadisticas" && (
   <div style={{padding:"20px"}}>
     {[
-      ["Victorias", (ranking||[]).slice().sort((a,b)=>b.g-a.g||b.pts-a.pts||(b.sf-b.sc)-(a.sf-a.sc)), r=>r.g, RWIN],
-      ["Sets a Favor", (ranking||[]).slice().sort((a,b)=>b.sf-a.sf||b.pts-a.pts||(b.sf-b.sc)-(a.sf-a.sc)), r=>r.sf, T.t1],
-      ["Sets en Contra", (ranking||[]).slice().sort((a,b)=>a.sc-b.sc||b.pts-a.pts||(b.sf-b.sc)-(a.sf-a.sc)), r=>r.sc, RLOS],
+      ["Victorias", (ranking||[]).slice().sort((a,b)=>b.g-a.g||N(a.equipo).localeCompare(N(b.equipo))), r=>r.g, RWIN],
+      ["Sets a Favor", (ranking||[]).slice().sort((a,b)=>b.sf-a.sf||N(a.equipo).localeCompare(N(b.equipo))), r=>r.sf, T.t1],
+      ["Sets en Contra", (ranking||[]).slice().sort((a,b)=>a.sc-b.sc||N(a.equipo).localeCompare(N(b.equipo))), r=>r.sc, RLOS],
     ].map(([titulo, lista, val, color]) => (
       <div key={titulo} style={{background:T.surface, border:"1px solid "+T.border,
         borderRadius:10, overflow:"hidden", marginBottom:12}}>
