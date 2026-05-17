@@ -150,8 +150,9 @@ const recalcULP = (res) => {
 
 const buildRankingLocal = (res, base) => {
   const ulp = recalcULP(res);
-  return base.map(r => r.equipo==="ULP" ? ulp : r)
-    .sort((a,b) => b.pts-a.pts || (b.sf-b.sc)-(a.sf-a.sc))
+  const withIdx = base.map((r,i) => r.equipo==="ULP" ? {...ulp, _idx:i} : {...r, _idx:i});
+  return withIdx
+    .sort((a,b) => b.pts-a.pts || (b.sf-b.sc)-(a.sf-a.sc) || a._idx-b._idx)
     .map((r,i) => ({...r, pos:i+1}));
 };
 
