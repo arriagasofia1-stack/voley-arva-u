@@ -137,13 +137,7 @@ const getDiasCal = (y, m) => {
 };
 
 const recalcULP = (res) => {
-  const cr = enriched.filter(p =>
-  Object.values(res).some(r =>
-    r.m_set === p.f ||
-    r.id === p.f ||
-    r.match_id === p.f
-  ) && !p.libre
-)
+  const cr = enriched.filter(p => res[p.f] && !p.libre)
   return { equipo:"ULP",
     pts: cr.reduce((a,p)=>a+ptsVoley(res[p.f],p),0),
     j:   cr.length,
