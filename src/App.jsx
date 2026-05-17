@@ -306,7 +306,7 @@ export default function App() {
               p:      team.p    || team.lost      || 0,
               sf:     team.sf   || team.pf        || 0,
               sc:     team.sc   || team.pa        || 0,
-            })).filter(t => t.equipo !== "ULP");
+            }));
             if (newBase.length > 0) setRankBase(newBase);
           }
         }
