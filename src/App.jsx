@@ -986,7 +986,7 @@ export default function App() {
       <table style={{width:"100%", borderCollapse:"collapse"}}>
         <thead>
           <tr>
-            {["#","Equipo","Pts","J","G","SF","SC"].map((h,i) => (
+            {["#","Equipo","Pts","J","G","P","F","C","DS","DP","PE"].map((h,i) => (
               <th key={i} style={{
                 fontSize:10,
                 fontWeight:700,
@@ -1025,16 +1025,23 @@ export default function App() {
               <td style={{textAlign:"center"}}>{r.pts}</td>
               <td style={{textAlign:"center"}}>{r.j}</td>
               <td style={{textAlign:"center", color:r.g>0?RWIN:T.t3}}>{r.g}</td>
+              <td style={{textAlign:"center", color:r.p>0?RLOS:T.t3}}>{r.p||0}</td>
               <td style={{textAlign:"center"}}>{r.sf}</td>
               <td style={{textAlign:"center"}}>{r.sc}</td>
+              <td style={{textAlign:"center", color:(r.sf-r.sc)>=0?RWIN:RLOS}}>{r.sf-r.sc}</td>
+              <td style={{textAlign:"center"}}>{r.dp||0}</td>
+              <td style={{textAlign:"center"}}>{r.pe||0}</td>
 
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div style={{padding:"10px 20px 14px", fontSize:10, color:T.t3}}>
+      <div style={{padding:"10px 20px 6px", fontSize:10, color:T.t3}}>
         Datos automáticos desde Copafacil (sin edición manual)
+      </div>
+      <div style={{padding:"4px 20px 14px", fontSize:10, color:T.t3, lineHeight:1.7}}>
+        <b>Pts</b> Puntos · <b>J</b> Jugados · <b>G</b> Ganados · <b>P</b> Perdidos · <b>F</b> Sets favor · <b>C</b> Sets contra · <b>DS</b> Diferencia sets · <b>DP</b> Diferencia puntos · <b>PE</b> Puntos en contra
       </div>
     </div>
 
