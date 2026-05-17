@@ -63,7 +63,8 @@ const PARTIDOS_RAW = [
 const RESULTADOS_INICIALES = {
   1: { gL:3, gV:1, sets:[[25,11],[22,25],[25,10],[25,20]], src:"cf" }, // ULP 3-1 SMLH
   3: { gL:3, gV:0, sets:[[25,10],[25,20],[25,10]],         src:"cf" }, // ULP 3-0 ALB-VGX B
-  5: { gL:3, gV:0, sets:[[25,12],[25,22],[25,13]],         src:"cf" }, // ULP 3-0 Villa Garibaldi
+  5: { gL:3, gV:0, sets:[[25,12],[25,22],[25,13]],         src:"cf" },
+  6: { gL:3, gV:1, sets:[],                                src:"manual" }, // ULP 3-0 Villa Garibaldi
 };
 
 const RANKING_BASE = [
