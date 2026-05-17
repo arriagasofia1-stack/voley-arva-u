@@ -44,7 +44,7 @@ const PARTIDOS_RAW = [
   { f:10, dia:"DOM 14/6",  local:"ULP",            visita:"CEYE B",          hora:"13.30", cancha:"ULP",            cond:"LOCAL"  },
   { f:11, dia:"DOM 21/6",  local:"EL CRUCE B",     visita:"ULP",             hora:"",      cancha:"EL CRUCE",       cond:"VISITA", libre:true },
   { f:12, dia:"DOM 28/6",  local:"ULP",            visita:"EL CRUCE B",      hora:"13.30", cancha:"ULP",            cond:"LOCAL"  },
-  { f:13, dia:"SAB 4/7",   local:"EL CRUCE C",     visita:"ULP",             hora:"15.00", cancha:"EL CRUCE",       cond:"VISITA" },
+  { f:13, dia:"SAB 4/7",   local:"EL CRUCE B",     visita:"ULP",             hora:"",      cancha:"EL CRUCE",       cond:"VISITA", libre:true },
   { f:14, dia:"CEDE",      local:"SAN MARTIN LH",  visita:"ULP",             hora:"CEDE",  cancha:"CEDEN",          cond:"VISITA" },
   { f:15, dia:"DOM 9/8",   local:"ULP",            visita:"CF IGN CORR",     hora:"",      cancha:"ULP",            cond:"LOCAL",  libre:true },
   { f:16, dia:"SAB 15/8",  local:"ALB-VGX B",      visita:"ULP",             hora:"14.30", cancha:"ALBERTI",        cond:"VISITA" },
@@ -57,7 +57,7 @@ const PARTIDOS_RAW = [
   { f:23, dia:"DOM 4/10",  local:"CEYE B",         visita:"ULP",             hora:"13.30", cancha:"ULP",            cond:"VISITA" },
   { f:24, dia:"DOM 11/10", local:"BPLP C",         visita:"ULP",             hora:"10.30", cancha:"BPLP",           cond:"VISITA" },
   { f:25, dia:"SAB 17/10", local:"EL CRUCE B",     visita:"ULP",             hora:"12.30", cancha:"EL CRUCE",       cond:"VISITA" },
-  { f:26, dia:"SAB 24/10", local:"ULP",            visita:"EL CRUCE C",      hora:"",      cancha:"ULP",            cond:"LOCAL",  libre:true },
+  { f:26, dia:"SAB 24/10", local:"ULP",            visita:"EL CRUCE B",      hora:"",      cancha:"ULP",            cond:"LOCAL",  libre:true },
 ];
 
 const RESULTADOS_INICIALES = {
